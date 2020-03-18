@@ -1,10 +1,18 @@
 const express=require('express');
+const bodyParser = require('body-parser')
 const app=express();
-
 const primeRoutes=require('./routes/prime');
+const userRoutes=require('./routes/user');
 
 app.use('/prime',primeRoutes);
+app.use('/user',userRoutes);
 
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+ 
+// parse application/json
+app.use(bodyParser.json())
 
 
 // app.use((req,res,next)=>{
