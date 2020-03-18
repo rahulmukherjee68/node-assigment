@@ -1,5 +1,5 @@
 const express=require('express');
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
 const app=express();
 const primeRoutes=require('./routes/prime');
 const userRoutes=require('./routes/user');
