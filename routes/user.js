@@ -1,32 +1,72 @@
-const express=require('express');
-const router=express.Router();
-const bodyParser = require('body-parser');
+const express = require('express');
+const router = express.Router();
+const body = require('body-parser');
 
-
-// we create 'users' collection in newdb database
-var url = "mongodb://localhost:27017/test";
- 
-// create a client to mongodb
 var MongoClient = require('mongodb').MongoClient;
- 
-// make client connect to mongo service
-MongoClient.connect(url, function(err, db) {
-    if (err) throw err;
-    // db pointing to newdb
-    console.log("Switched to "+db.databaseName+" database");
- 
-    // document to be inserted
-    var doc = { name: "Roshan", age: "22" };
-    
-    // insert document to 'users' collection using insertOne
-    db.collection("test").insertOne(doc, function(err, res) {
-        if (err) throw err;
-        console.log("Document inserted");
-        // close the connection to db when you are done with it
-        db.close();
-    });
-});
+var url = "mongodb://localhost:27017/";
 
+// MongoClient.connect(url, function (err, db) {
+//     if (err) throw err;
+//     var dbo = db.db("mydb");
+//     dbo.createCollection("customers", function (err, res) {
+//         if (err) throw err;
+//         console.log("Collection created!");
+//         db.close();
+//     });
+// });
+
+// MongoClient.connect(url, function (err, db) {        
+//     if (err) throw err;
+//     var dbo = db.db("user");
+//     // var myobj = { name: "Company Inc", address: "Highway 37" };
+//     dbo.createcollection("user").insertOne(myobj, function (err, res) {
+//         if (err) {
+
+//         }
+//         else {
+
+//         }
+//         console.log("1 document inserted");
+//         db.close();
+//     });
+// });
+
+
+
+router.post('/', (req, res, next) => {
+    var myobj = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        address: req.body.address,
+        phone: req.body.phone,
+        dob: req.body.dob,
+    };
+    console.log(myobj);
+    try{
+    MongoClient.connect(url, function (err, db) {
+        if (err) throw err;
+        else {
+            var dbo = db.db("user");
+            dbo.collection("users").insertOne(myobj, function(err, res) {
+                if (err) throw err;
+               
+            });
+        }
+    });
+    res.status(200).json({
+        message:"Data Inserted Successfully"
+    });
+
+    }
+    catch(error){
+        res.status(404).json({
+            message:error
+        });
+    }
+
+
+});
 
 
 router.get('/', (req, res, next) => {
@@ -36,4 +76,4 @@ router.get('/', (req, res, next) => {
     });
 });
 
-module.exports=router;
+module.exports = router;
