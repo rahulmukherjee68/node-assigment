@@ -19,7 +19,7 @@ MongoClient.connect(url, function(err, db) {
     var doc = { name: "Roshan", age: "22" };
     
     // insert document to 'users' collection using insertOne
-    db.collection("users").insertOne(doc, function(err, res) {
+    db.collection("test").insertOne(doc, function(err, res) {
         if (err) throw err;
         console.log("Document inserted");
         // close the connection to db when you are done with it
