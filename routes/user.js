@@ -130,6 +130,48 @@ router.post('/', (req, res, next) => {
 
 });
 
+function deleteAll(myobj, res) {
+    UserModel.deleteOne(myobj).then(result => {
+        ContactModel.deleteOne(myobj).then(result => {
+            if(result.deletedCount==0)
+            {
+                res.status(200).json({
+                    message: "No Data Found on the given Phone Number"
+                });
+            }
+            else{
+            res.status(200).json({
+                message: "Data deleted Successfully from user and contacts "
+            });
+            }
+        }).catch(err => {
+            res.status(404).json({
+                message: "Data Not deleted Successfully from user and contacts " + err
+            });
+        });
 
+    }).catch(err => {
+        res.status(404).json({
+            message: "Data Not Inserted Successfully " + err
+        });
+    });
+
+
+
+}
+
+router.delete('/', (req, res, next) => {
+    var myobj = {
+        phone: req.body.phone,
+    };
+    if (phonenumber(myobj.phone)) {
+        deleteAll(myobj, res)
+    }
+    else {
+        res.status(200).json({
+            message: "Mobile number not valid please Enter Valid Mobile bumber"
+        });
+    }
+})
 
 module.exports = router;
