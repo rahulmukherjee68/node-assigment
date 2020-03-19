@@ -45,6 +45,33 @@ function response(myobj, res) {
     });
 }
 
+
+function insert(myobj, res) {
+    UserModel.findOne({ email: myobj.email })
+        .exec()
+        .then(doc => {
+            console.log(doc);
+            if (doc == null) {
+                UserModel.findOne({ phone: myobj.phone }).exec().then(
+                    doc => {
+                        if (doc == null) {
+                            response(myobj, res);
+                        }
+                        else {
+                            res.status(200).json({ message: "Duplicate phone number cannot be used" })
+                        }
+                    }
+                )
+
+            }
+            else {
+                res.status(200).json({ message: "Duplicate Email cannot be used" })
+            }
+        }).catch(err => {
+            res.status(404).json({ message: err })
+        })
+}
+
 router.post('/', (req, res, next) => {
     try {
         var myobj = {
@@ -58,35 +85,10 @@ router.post('/', (req, res, next) => {
 
         if (ValidateEmail(myobj.email)) {
             if (phonenumber(myobj.phone)) {
-
-
-                UserModel.findOne({ email: myobj.email })
-                    .exec()
-                    .then(doc => {
-                        console.log(doc);
-                        if (doc == null) {
-                            UserModel.findOne({ phone: myobj.phone }).exec().then(
-                                doc => {
-                                    if (doc == null) {
-                                        response(myobj, res);
-                                    }
-                                    else {
-                                        res.status(200).json({ message: "Duplicate phone number cannot be used" })
-                                    }
-                                }
-                            )
-
-                        }
-                        else {
-                            res.status(200).json({ message: "Duplicate Email cannot be used" })
-                        }
-                    }).catch(err => {
-                        res.status(404).json({ message: err })
-                    })
-
+                insert(myobj, res);
             }
             else {
-                res.status(404).json({
+                res.status(200).json({
                     message: "Mobile number not valid please Enter Valid Mobile bumber"
                 });
             }
@@ -97,21 +99,6 @@ router.post('/', (req, res, next) => {
             });
         }
 
-
-
-        // const user = new UserModel(myobj)
-        // user.save().then(result => {
-        //     console.log(result);
-
-        // }).catch(err => {
-        //     res.status(404).json({
-        //         message: "Data NOt Inserted Successfully" + err
-        //     });
-        // });
-
-        // res.status(200).json({
-        //     message: "Data Inserted Successfully"
-        // });
     }
     catch (error) {
         res.status(404).json({
@@ -120,10 +107,6 @@ router.post('/', (req, res, next) => {
     }
 
 });
-
-
-
-
 
 
 
