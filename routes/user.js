@@ -1,12 +1,15 @@
 const express = require('express');
+const mongoose = require("mongoose");
+
 const router = express.Router();
 const body = require('body-parser');
 
 const UserModel = require('../models/user');
+const ContactModel = require('../models/contact');
 
 
 function ValidateEmail(mail) {
-    console.log(mail);
+    //console.log(mail);
 
     if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail)) {
         return (true)
@@ -15,7 +18,8 @@ function ValidateEmail(mail) {
 }
 
 function phonenumber(a) {
-    console.log(a);
+    a = a.toString();
+    //console.log(a);
 
     if (a == "" || isNaN(a)) {
         return false;
@@ -29,33 +33,50 @@ function phonenumber(a) {
     }
 }
 
-function response(myobj, res) {
-    const user = new UserModel(myobj)
-    user.save().then(result => {
-        console.log(result);
+function saveContact(myobj, res) {
+    const contact = new ContactModel({ _id: new mongoose.Types.ObjectId(), email: myobj.email, phone: myobj.phone });
+    contact.save().then(result => {
+        myobj = Object.assign({ contactRef: result._id }, myobj)
+        console.log(myobj);
+        saveUser(myobj, res);
+
 
     }).catch(err => {
         res.status(404).json({
-            message: "Data NOt Inserted Successfully" + err
+            message: "Data Not Inserted Successfully " + err
         });
-    });
-
-    res.status(200).json({
-        message: "Data Inserted Successfully"
     });
 }
 
+function saveUser(myobj, res) {
+    console.log(myobj);
+    const user = new UserModel(myobj)
 
-function insert(myobj, res) {
+    user.save().then(result => {
+        res.status(200).json({
+            message: "Data Inserted Successfully to User Collection"
+        });
+
+    }).catch(err => {
+        res.status(404).json({
+            message: "Data Not Inserted Successfully " + err
+        });
+    });
+
+}
+
+
+async function insert(myobj, res) {
     UserModel.findOne({ email: myobj.email })
         .exec()
         .then(doc => {
-            console.log(doc);
+            //console.log(doc);
             if (doc == null) {
                 UserModel.findOne({ phone: myobj.phone }).exec().then(
                     doc => {
                         if (doc == null) {
-                            response(myobj, res);
+                            saveContact(myobj, res);
+
                         }
                         else {
                             res.status(200).json({ message: "Duplicate phone number cannot be used" })
@@ -75,6 +96,7 @@ function insert(myobj, res) {
 router.post('/', (req, res, next) => {
     try {
         var myobj = {
+            _id: new mongoose.Types.ObjectId(),
             name: req.body.name,
             email: req.body.email,
             password: req.body.password,
@@ -94,7 +116,7 @@ router.post('/', (req, res, next) => {
             }
         }
         else {
-            res.status(404).json({
+            res.status(200).json({
                 message: "Email Id not Valid please Enter Valid Email ID"
             });
         }
@@ -109,12 +131,5 @@ router.post('/', (req, res, next) => {
 });
 
 
-
-router.get('/', (req, res, next) => {
-
-    res.status(200).json({
-        "message": "user works"
-    });
-});
 
 module.exports = router;
