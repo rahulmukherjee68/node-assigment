@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { check, validationResult } = require('express-validator');
+
 
 
 function isPrime(n) {
@@ -31,11 +33,25 @@ function prime(number) {
 }
 
 router.get('/:number', (req, res, next) => {
-    const number = req.params.number;
-    const resarr = prime(number);
-    res.status(200).json({
-        "prime": resarr
-    });
+    try {
+        const number = req.params.number;
+        const resarr = prime(number);
+        if(resarr.length==0)
+        {
+            res.status(200).json({
+                "prime": "No prime numbers are there!"
+            }); 
+        }
+        res.status(200).json({
+            "prime": resarr
+        });
+
+    }
+    catch (err) {
+
+        res.status(422).json({ message: err });
+
+    }
 });
 
 module.exports = router;

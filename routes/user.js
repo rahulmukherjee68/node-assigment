@@ -1,6 +1,9 @@
 const express = require('express');
 const mongoose = require("mongoose");
 
+const { check, validationResult } = require('express-validator');
+
+
 const router = express.Router();
 const body = require('body-parser');
 
@@ -8,48 +11,27 @@ const UserModel = require('../models/user');
 const ContactModel = require('../models/contact');
 
 
-function ValidateEmail(mail) {
-    //console.log(mail);
 
-    if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail)) {
-        return (true)
-    }
-    return (false)
-}
-
-function phonenumber(a) {
-    a = a.toString();
-    //console.log(a);
-
-    if (a == "" || isNaN(a)) {
-        return false;
-    }
-    var phoneno = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-    if ((a.match(phoneno))) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-function saveContact(myobj, res) {
+async function saveContact(myobj, res) {
     const contact = new ContactModel({ _id: new mongoose.Types.ObjectId(), email: myobj.email, phone: myobj.phone });
-    contact.save().then(result => {
+    const saveContact=await contact.save().then(result => {
         myobj = Object.assign({ contactRef: result._id }, myobj)
-        console.log(myobj);
-        saveUser(myobj, res);
-
+        return true;
 
     }).catch(err => {
         res.status(404).json({
             message: "Data Not Inserted Successfully " + err
         });
     });
+
+    if(saveContact)
+    {
+        saveUser(myobj, res);
+    }
 }
 
 function saveUser(myobj, res) {
-    console.log(myobj);
+    // console.log(myobj);
     const user = new UserModel(myobj)
 
     user.save().then(result => {
@@ -67,6 +49,31 @@ function saveUser(myobj, res) {
 
 
 async function insert(myobj, res) {
+    const mail=await UserModel.findOne({ email: myobj.email }).then(doc=>{
+        return doc
+    }).catch(err => { res.status(422).json({ message: err }) });
+
+    if(mail==null)
+    {
+        const mob=await UserModel.findOne({ phone: myobj.phone }).then(doc=>{
+            return doc;
+        }).catch(err => { res.status(422).json({ message: err }) });
+        if(mob==null)
+        {
+            saveContact(myobj,res);
+        }
+        else{
+            res.status(200).json({
+                message: "Mobile Number Already Exits Enter another Phone"
+            });
+        }
+    }
+    else{
+        res.status(200).json({
+            message: "Mail Already Exits Enter another email"
+        });
+    }
+
     UserModel.findOne({ email: myobj.email })
         .exec()
         .then(doc => {
@@ -93,38 +100,47 @@ async function insert(myobj, res) {
         })
 }
 
-function deleteAll(myobj, res) {
-    UserModel.deleteOne(myobj).then(result => {
-        ContactModel.deleteOne(myobj).then(result => {
-            if(result.deletedCount==0)
-            {
-                res.status(200).json({
-                    message: "No Data Found on the given Phone Number"
-                });
-            }
-            else{
+async function deleteAll(myobj, res) {
+    const user = await UserModel.deleteOne(myobj).then(result => {
+        return result
+    }).catch(err => { res.status(422).json({ message: err }) });
+    console.log(user.deletedCount);
+    if (user.deletedCount > 0) {
+        const contact = await ContactModel.deleteOne(myobj).then(result => {
             res.status(200).json({
                 message: "Data deleted Successfully from user and contacts "
             });
-            }
-        }).catch(err => {
-            res.status(404).json({
-                message: "Data Not deleted Successfully from user and contacts " + err
-            });
+        }).catch(err => { res.status(422).json({ message: err }) });
+    }
+    else {
+        res.status(200).json({
+            message: "Such Data Not Found! Cannot apply delete Operation"
         });
-
-    }).catch(err => {
-        res.status(404).json({
-            message: "Data Not Inserted Successfully " + err
-        });
-    });
-
-
+    }
 
 }
 
-router.post('/', (req, res, next) => {
+router.post('/', [
+    // must be an email
+    check('email').isEmail(),
+    // must be phone number
+    check('phone').isMobilePhone(['en-IN']),
+], (req, res, next) => {
     try {
+
+        const errors = validationResult(req);
+        //console.log(errors);
+
+        if (errors.errors.length == 1) {
+            return res.status(422).json({
+                error: "Please enter correct " + errors.errors[0].param
+            });
+        }
+        else if (errors.errors.length == 2) {
+            return res.status(422).json({
+                error: "Please enter correct " + errors.errors[0].param + " and " + errors.errors[1].param
+            });
+        }
         var myobj = {
             _id: new mongoose.Types.ObjectId(),
             name: req.body.name,
@@ -135,21 +151,7 @@ router.post('/', (req, res, next) => {
             dob: req.body.dob
         };
 
-        if (ValidateEmail(myobj.email)) {
-            if (phonenumber(myobj.phone)) {
-                insert(myobj, res);
-            }
-            else {
-                res.status(200).json({
-                    message: "Mobile number not valid please Enter Valid Mobile bumber"
-                });
-            }
-        }
-        else {
-            res.status(200).json({
-                message: "Email Id not Valid please Enter Valid Email ID"
-            });
-        }
+        insert(myobj, res)
 
     }
     catch (error) {
@@ -161,18 +163,24 @@ router.post('/', (req, res, next) => {
 });
 
 
-router.delete('/', (req, res, next) => {
+
+
+router.delete('/', [
+    // must be phone number
+    check('phone').isMobilePhone(['en-IN']),
+], (req, res, next) => {
     var myobj = {
         phone: req.body.phone,
     };
-    if (phonenumber(myobj.phone)) {
-        deleteAll(myobj, res)
-    }
-    else {
-        res.status(200).json({
-            message: "Mobile number not valid please Enter Valid Mobile bumber"
+    const errors = validationResult(req);
+    //console.log(errors);
+
+    if (errors.errors.length == 1) {
+        return res.status(422).json({
+            error: "Please enter correct " + errors.errors[0].param
         });
     }
+    deleteAll(myobj, res)
 })
 
 module.exports = router;
