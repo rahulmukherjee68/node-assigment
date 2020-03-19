@@ -19,7 +19,7 @@ async function saveContact(myobj, res) {
         return true;
 
     }).catch(err => {
-        res.status(404).json({
+        res.status(200).json({
             message: "Data Not Inserted Successfully " + err
         });
     });
@@ -36,11 +36,11 @@ function saveUser(myobj, res) {
 
     user.save().then(result => {
         res.status(200).json({
-            message: "Data Inserted Successfully to User Collection"
+            message: "Data Inserted Successfully to User and Contact Collection"
         });
 
     }).catch(err => {
-        res.status(404).json({
+        res.status(200).json({
             message: "Data Not Inserted Successfully " + err
         });
     });
@@ -51,13 +51,13 @@ function saveUser(myobj, res) {
 async function insert(myobj, res) {
     const mail=await UserModel.findOne({ email: myobj.email }).then(doc=>{
         return doc
-    }).catch(err => { res.status(422).json({ message: err }) });
+    }).catch(err => { res.status(200).json({ message: err }) });
 
     if(mail==null)
     {
         const mob=await UserModel.findOne({ phone: myobj.phone }).then(doc=>{
             return doc;
-        }).catch(err => { res.status(422).json({ message: err }) });
+        }).catch(err => { res.status(200).json({ message: err }) });
         if(mob==null)
         {
             saveContact(myobj,res);
@@ -96,21 +96,21 @@ async function insert(myobj, res) {
                 res.status(200).json({ message: "Duplicate Email cannot be used" })
             }
         }).catch(err => {
-            res.status(404).json({ message: err })
+            res.status(200).json({ message: err })
         })
 }
 
 async function deleteAll(myobj, res) {
     const user = await UserModel.deleteOne(myobj).then(result => {
         return result
-    }).catch(err => { res.status(422).json({ message: err }) });
+    }).catch(err => { res.status(200).json({ message: err }) });
     console.log(user.deletedCount);
     if (user.deletedCount > 0) {
         const contact = await ContactModel.deleteOne(myobj).then(result => {
             res.status(200).json({
                 message: "Data deleted Successfully from user and contacts "
             });
-        }).catch(err => { res.status(422).json({ message: err }) });
+        }).catch(err => { res.status(200).json({ message: err }) });
     }
     else {
         res.status(200).json({
@@ -132,12 +132,12 @@ router.post('/', [
         //console.log(errors);
 
         if (errors.errors.length == 1) {
-            return res.status(422).json({
+            return res.status(200).json({
                 error: "Please enter correct " + errors.errors[0].param
             });
         }
         else if (errors.errors.length == 2) {
-            return res.status(422).json({
+            return res.status(200).json({
                 error: "Please enter correct " + errors.errors[0].param + " and " + errors.errors[1].param
             });
         }
@@ -155,7 +155,7 @@ router.post('/', [
 
     }
     catch (error) {
-        res.status(404).json({
+        res.status(200).json({
             message: "Error:- " + error
         });
     }
@@ -176,7 +176,7 @@ router.delete('/', [
     //console.log(errors);
 
     if (errors.errors.length == 1) {
-        return res.status(422).json({
+        return res.status(200).json({
             error: "Please enter correct " + errors.errors[0].param
         });
     }
